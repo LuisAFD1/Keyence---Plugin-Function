@@ -1,0 +1,55 @@
+//filtro para la deteccion de border Sobel
+#include <PlugIn.h>
+
+int plugin_main(PIN_IMAGE* pDstImg, PIN_IMAGE* pSrcImg, PIN_IMAGE* pRefImg)
+{
+    // Verifica que los punteros de imagen no sean nulos
+    if (pSrcImg == NULL || pDstImg == NULL) {
+        return -1;  // Error
+    }
+
+    // Accede a la información de la imagen de origen
+    unsigned char* srcPixels = pSrcImg->pixel;
+    int width = pSrcImg->width;
+    int height = pSrcImg->height;
+    int pitch = pSrcImg->pitch;
+
+    // Accede a la información de la imagen de destino
+    unsigned char* dstPixels = pDstImg->pixel;
+
+    // Procesa la imagen de origen (detección de contornos) y almacena los resultados en la imagen de destino
+    for (int y = 1; y < height - 1; y++) {
+        for (int x = 1; x < width - 1; x++) {
+            // Calcula la posición del píxel en la memoria
+            unsigned char* srcPixel = srcPixels + y * pitch + x;
+            unsigned char* dstPixel = dstPixels + y * pitch + x;
+
+            // Aplica el operador Sobel para detectar bordes
+            int gx = srcPixels[(y - 1) * pitch + x - 1] - srcPixels[(y + 1) * pitch + x - 1] +
+                2 * srcPixels[(y - 1) * pitch + x] - 2 * srcPixels[(y + 1) * pitch + x] +
+                srcPixels[(y - 1) * pitch + x + 1] - srcPixels[(y + 1) * pitch + x + 1];
+            int gy = srcPixels[(y - 1) * pitch + x - 1] - srcPixels[(y - 1) * pitch + x + 1] +
+                2 * srcPixels[y * pitch + x - 1] - 2 * srcPixels[y * pitch + x + 1] +
+                srcPixels[(y + 1) * pitch + x - 1] - srcPixels[(y + 1) * pitch + x + 1];
+
+            // Calcula el valor de magnitud del gradiente
+            int magnitude = abs(gx) + abs(gy);
+
+            // Establece el píxel de destino en función de la magnitud del gradiente
+            *dstPixel = (magnitude > 128) ? 255 : 0;
+        }
+    }
+
+    // Rellena los bordes de la imagen con píxeles negros (opcional)
+    for (int y = 0; y < height; y++) {
+        dstPixels[y * pitch] = 0;
+        dstPixels[y * pitch + width - 1] = 0;
+    }
+    for (int x = 0; x < width; x++) {
+        dstPixels[x] = 0;
+        dstPixels[(height - 1) * pitch + x] = 0;
+    }
+
+    // Devuelve 0 para indicar éxito
+    return 0;
+}

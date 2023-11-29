@@ -1,0 +1,59 @@
+//filtro para aumentar el contraste
+#include <PlugIn.h>
+
+// Kernel del filtro de realce de contraste
+int kernel[3][3] = {
+    {0, -1, 0},
+    {-1, 5, -1},
+    {0, -1, 0}
+};
+
+int plugin_main(PIN_IMAGE* pDstImg, PIN_IMAGE* pSrcImg, PIN_IMAGE* pRefImg)
+{
+    // Verifica que los punteros de imagen no sean nulos
+    if (pSrcImg == NULL || pDstImg == NULL) {
+        return -1;  // Error
+    }
+
+    // Accede a la información de la imagen de origen
+    unsigned char* srcPixels = pSrcImg->pixel;
+    int width = pSrcImg->width;
+    int height = pSrcImg->height;
+    int pitch = pSrcImg->pitch;
+
+    // Accede a la información de la imagen de destino
+    unsigned char* dstPixels = pDstImg->pixel;
+
+    // Procesa la imagen de origen (aplicar filtro de realce de contraste) y almacena los resultados en la imagen de destino
+    for (int y = 1; y < height - 1; y++) {
+        for (int x = 1; x < width - 1; x++) {
+            // Calcula la posición del píxel en la memoria
+            unsigned char* dstPixel = dstPixels + y * pitch + x;
+
+            // Aplica la convolución con el kernel del filtro de realce de contraste
+            int sum = 0;
+            for (int ky = -1; ky <= 1; ky++) {
+                for (int kx = -1; kx <= 1; kx++) {
+                    unsigned char* srcPixel = srcPixels + (y + ky) * pitch + (x + kx);
+                    sum += *srcPixel * kernel[ky + 1][kx + 1];
+                }
+            }
+
+            // Asegura que el valor está en el rango [0, 255]
+            *dstPixel = (unsigned char)max(0, min(255, sum));
+        }
+    }
+
+    // Rellena los bordes de la imagen con píxeles negros (opcional)
+    for (int y = 0; y < height; y++) {
+        dstPixels[y * pitch] = 0;
+        dstPixels[y * pitch + width - 1] = 0;
+    }
+    for (int x = 0; x < width; x++) {
+        dstPixels[x] = 0;
+        dstPixels[(height - 1) * pitch + x] = 0;
+    }
+
+    // Devuelve 0 para indicar éxito
+    return 0;
+}

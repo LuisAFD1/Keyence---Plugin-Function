@@ -1,0 +1,41 @@
+#include <PlugIn.h>
+
+int plugin_main(PIN_IMAGE* pDstImg, PIN_IMAGE* pSrcImg, PIN_IMAGE* pRefImg)
+{
+    // Verifica que los punteros de imagen no sean nulos
+    if (pSrcImg == NULL || pDstImg == NULL) {
+        return -1;  // Error
+    }
+
+    // Accede a la información de la imagen de origen
+    unsigned char* srcPixels = pSrcImg->pixel;
+    int width = pSrcImg->width;
+    int height = pSrcImg->height;
+    int pitch = pSrcImg->pitch;
+
+    // Define un umbral para la binarización (ajusta este valor según tus necesidades)
+    int threshold = 10;
+
+    // Accede a la información de la imagen de destino
+    unsigned char* dstPixels = pDstImg->pixel;
+
+    // Procesa la imagen de origen (convierte a binario) y almacena los resultados en la imagen de destino
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            // Calcula la posición del píxel en la memoria
+            unsigned char* srcPixel = srcPixels + y * pitch + x;
+            unsigned char* dstPixel = dstPixels + y * pitch + x;
+
+            // Compara el valor del píxel con el umbral y establece el píxel en blanco o negro
+            if (*srcPixel > threshold) {
+                *dstPixel = 255;  // Blanco
+            }
+            else {
+                *dstPixel = 0;    // Negro
+            }
+        }
+    }
+
+    // Devuelve 0 para indicar éxito
+    return 0;
+}

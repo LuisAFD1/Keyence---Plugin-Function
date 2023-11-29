@@ -1,0 +1,71 @@
+#include <PlugIn.h>
+
+int plugin_main(PIN_IMAGE* pDstImg, PIN_IMAGE* pSrcImg, PIN_IMAGE* pRefImg)
+{
+    // Verifica que los punteros de imagen no sean nulos
+    if (pSrcImg == NULL || pDstImg == NULL) {
+        return -1;  // Error
+    }
+
+    // Accede a la información de la imagen de origen
+    unsigned char* srcPixels = pSrcImg->pixel;
+    int width = pSrcImg->width;
+    int height = pSrcImg->height;
+    int pitch = pSrcImg->pitch;
+
+    // Define un umbral para la binarización (ajusta este valor según tus necesidades)
+    int threshold = 100;
+
+    // Accede a la información de la imagen de destino
+    unsigned char* dstPixels = pDstImg->pixel;
+    int dstWidth = pDstImg->width;
+    int dstHeight = pDstImg->height;
+    int dstPitch = pDstImg->pitch;
+
+    // Procesa la imagen de origen (convierte a binario)
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            // Calcula la posición del píxel en la memoria
+            unsigned char* srcPixel = srcPixels + y * pitch + x;
+            unsigned char* dstPixel = dstPixels + y * dstPitch + x + 10; // Mueve 10 píxeles a la derecha
+
+            // Compara el valor del píxel con un umbral y establece el píxel en blanco o negro
+            if (*srcPixel > threshold) {
+                *dstPixel = 0;    // Negro
+            }
+            else {
+                *dstPixel = 255;  // Blanco
+            }
+        }
+    }
+
+    // Detección de bordes y ajuste de píxeles dentro de las figuras negras
+    for (int y = 1; y < height - 1; y++) {
+        for (int x = 1; x < width - 1; x++) {
+            unsigned char* dstPixel = dstPixels + y * dstPitch + x;
+            if (*dstPixel == 0) {
+                // Verifica los píxeles circundantes
+                unsigned char* p[8];
+                p[0] = dstPixel - dstPitch - 1;
+                p[1] = dstPixel - dstPitch;
+                p[2] = dstPixel - dstPitch + 1;
+                p[3] = dstPixel - 1;
+                p[4] = dstPixel + 1;
+                p[5] = dstPixel + dstPitch - 1;
+                p[6] = dstPixel + dstPitch;
+                p[7] = dstPixel + dstPitch + 1;
+
+                // Si algún píxel circundante es blanco, ajusta a negro
+                for (int i = 0; i < 8; i++) {
+                    if (*p[i] == 255) {
+                        *dstPixel = 0;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    // Devuelve 0 para indicar éxito
+    return 0;
+}
